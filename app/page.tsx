@@ -76,7 +76,7 @@ export default function Portfolio() {
                   <span className="sr-only">GitHub</span>
                 </Button>
               </Link>
-              <Link href="www.linkedin.com/in/nithilanm23" target="_blank" rel="noopener noreferrer">
+              <Link href="www.linkedin.com/nithilanm23" target="_blank" rel="noopener noreferrer">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -194,7 +194,7 @@ export default function Portfolio() {
               <div className="space-y-8">
                 <div className="border-l-4 border-orange-500 pl-6">
                   <h3 className="text-2xl font-bold mb-2">RGAE-PNNR: Unsupervised Visual Anomaly Detection</h3>
-                  <p className="text-orange-400 font-medium mb-2">Research Paper Under Review at Springer Nature</p>
+                  <p className="text-orange-400 font-medium mb-2">Revised Draft submitted at Springer Nature</p>
                   <p className="text-zinc-400 mb-4">Aug 2025 – Jan 2026</p>
                   
                   <p className="text-zinc-300 mb-4">
@@ -299,6 +299,14 @@ export default function Portfolio() {
           <SectionHeading title="Featured Projects" subtitle="Some of my recent work" />
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-16">
+
+          <ProjectCard
+              title="F1 Race Position Predictor"
+              description="Predictive web application for Formula 1 race outcomes using historical data and XGBoost regression."
+              tags={["Django", "XGBoost", "REST APIs", "Data Analysis"]}
+              demoUrl="https://f1predictor.onrender.com"
+              repoUrl="https://github.com/NithilanM23/F1-Predictor"
+            />
             <ProjectCard
               title="Multimodal RAG System"
               description="Enterprise-grade RAG system processing PDFs with text, tables, and images. Hybrid retrieval pipeline with local LLM inference."
@@ -309,14 +317,7 @@ export default function Portfolio() {
             <ProjectCard
               title="AI Chatbot with Pinecone"
               description="Company knowledge assistant using Flowise and Pinecone. Built with website scraping, embeddings, and vector retrieval."
-              tags={["Flowise", "Pinecone", "LLMs", "Web Scraping"]}
-              demoUrl="https://example.com"
-              repoUrl="https://github.com"
-            />
-            <ProjectCard
-              title="F1 Race Position Predictor"
-              description="Predictive web application for Formula 1 race outcomes using historical data and XGBoost regression."
-              tags={["Django", "XGBoost", "REST APIs", "Data Analysis"]}
+              tags={["FlowiseAI", "Pinecone", "LLMs", "Web Scraping"]}
               demoUrl="https://example.com"
               repoUrl="https://github.com"
             />
@@ -325,7 +326,7 @@ export default function Portfolio() {
               description="Interactive AI-powered CSV analysis tool with automated EDA, conversational insights, and dynamic visualizations."
               tags={["Streamlit", "Pandas", "Gemini LLM", "Matplotlib"]}
               demoUrl="https://example.com"
-              repoUrl="https://github.com"
+              repoUrl="https://github.com/NithilanM23/Intelligent-CSV-Assistant-LLM-Powered"
             />
             <ProjectCard
               title="RGAE-PNNR Anomaly Detection"
@@ -339,7 +340,7 @@ export default function Portfolio() {
               description="AI-powered healthcare triage assistant using NLP for symptom classification and nearby hospital recommendations."
               tags={["Flask", "SpaCy", "NLP", "APIs", "Deployment"]}
               demoUrl="https://example.com"
-              repoUrl="https://github.com"
+              repoUrl="https://github.com/NithilanM23/BERT-Finetuning-For-MedicalData"
             />
           </div>
         </div>
