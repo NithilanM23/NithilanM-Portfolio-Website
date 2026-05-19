@@ -76,7 +76,7 @@ export default function Portfolio() {
                   <span className="sr-only">GitHub</span>
                 </Button>
               </Link>
-              <Link href="www.linkedin.com/nithilanm23" target="_blank" rel="noopener noreferrer">
+              <Link href="https://linkedin.com/in/nithilanm23/" target="_blank" rel="noopener noreferrer">
                 <Button
                   variant="ghost"
                   size="icon"
