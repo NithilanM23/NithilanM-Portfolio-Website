@@ -3,6 +3,7 @@ import { ArrowRight, Github, Linkedin, Mail } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { ProjectCard } from "@/components/project-card"
+import { projects } from "@/data/projects"
 import { SkillBadge } from "@/components/skill-badge"
 import { Timeline } from "@/components/timeline"
 import { ContactForm } from "@/components/contact-form"
@@ -298,50 +299,10 @@ export default function Portfolio() {
         <div className="container relative z-10">
           <SectionHeading title="Featured Projects" subtitle="Some of my recent work" />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-16">
-
-          <ProjectCard
-              title="F1 Race Position Predictor"
-              description="Predictive web application for Formula 1 race outcomes using historical data and XGBoost regression."
-              tags={["Django", "XGBoost", "REST APIs", "Data Analysis"]}
-              demoUrl="https://f1predictor.onrender.com"
-              repoUrl="https://github.com/NithilanM23/F1-Predictor"
-            />
-            <ProjectCard
-              title="Multimodal RAG System"
-              description="Enterprise-grade RAG system processing PDFs with text, tables, and images. Hybrid retrieval pipeline with local LLM inference."
-              tags={["RAG", "Local LLMs", "Hybrid Search", "PyTorch"]}
-              demoUrl="https://example.com"
-              repoUrl="https://github.com"
-            />
-            <ProjectCard
-              title="AI Chatbot with Pinecone"
-              description="Company knowledge assistant using Flowise and Pinecone. Built with website scraping, embeddings, and vector retrieval."
-              tags={["FlowiseAI", "Pinecone", "LLMs", "Web Scraping"]}
-              demoUrl="https://example.com"
-              repoUrl="https://github.com"
-            />
-            <ProjectCard
-              title="Intelligent CSV Assistant"
-              description="Interactive AI-powered CSV analysis tool with automated EDA, conversational insights, and dynamic visualizations."
-              tags={["Streamlit", "Pandas", "Gemini LLM", "Matplotlib"]}
-              demoUrl="https://example.com"
-              repoUrl="https://github.com/NithilanM23/Intelligent-CSV-Assistant-LLM-Powered"
-            />
-            <ProjectCard
-              title="RGAE-PNNR Anomaly Detection"
-              description="Research paper on visual anomaly detection using hybrid approach. Achieved 99.6% AUROC on MVTec AD benchmark."
-              tags={["PyTorch", "Computer Vision", "AutoEncoders", "Research"]}
-              demoUrl="https://example.com"
-              repoUrl="https://github.com"
-            />
-            <ProjectCard
-              title="Clinic Triage System"
-              description="AI-powered healthcare triage assistant using NLP for symptom classification and nearby hospital recommendations."
-              tags={["Flask", "SpaCy", "NLP", "APIs", "Deployment"]}
-              demoUrl="https://example.com"
-              repoUrl="https://github.com/NithilanM23/BERT-Finetuning-For-MedicalData"
-            />
+          <div className="mt-16 grid grid-cols-1 items-start gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {projects.map((project) => (
+              <ProjectCard key={project.title} {...project} />
+            ))}
           </div>
         </div>
       </section>
