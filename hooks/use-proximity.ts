@@ -16,9 +16,15 @@ export function useProximity(
       return
     }
 
-    const onMove = (e: MouseEvent) => {
+    let raf = 0
+    let lastNear: boolean | null = null
+    let lastEvent: MouseEvent | null = null
+
+    const compute = () => {
+      raf = 0
       const el = ref.current
-      if (!el) return
+      const e = lastEvent
+      if (!el || !e) return
 
       const rect = el.getBoundingClientRect()
       const near =
@@ -27,11 +33,23 @@ export function useProximity(
         e.clientY >= rect.top - threshold &&
         e.clientY <= rect.bottom + threshold
 
-      setIsNear(near)
+      if (near !== lastNear) {
+        lastNear = near
+        setIsNear(near)
+      }
+    }
+
+    const onMove = (e: MouseEvent) => {
+      lastEvent = e
+      if (raf) return
+      raf = window.requestAnimationFrame(compute)
     }
 
     window.addEventListener("mousemove", onMove, { passive: true })
-    return () => window.removeEventListener("mousemove", onMove)
+    return () => {
+      window.removeEventListener("mousemove", onMove)
+      if (raf) window.cancelAnimationFrame(raf)
+    }
   }, [ref, threshold, enabled])
 
   return isNear

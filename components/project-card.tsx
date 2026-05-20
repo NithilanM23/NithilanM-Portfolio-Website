@@ -70,7 +70,6 @@ export function ProjectCard({
   return (
     <motion.article
       ref={cardRef}
-      layout
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: DURATION.slow, ease: EASE.luxury }}
@@ -93,7 +92,6 @@ export function ProjectCard({
       aria-expanded={isMobile ? isActive : undefined}
     >
       <motion.div
-        layout
         className={cn(
           "relative h-full overflow-hidden rounded-xl border backdrop-blur-sm transition-[border-color,box-shadow] duration-500",
           "bg-zinc-800/50 border-zinc-700/50",
@@ -112,35 +110,22 @@ export function ProjectCard({
           transition={{ duration: isActive ? 0.35 : 1 }}
         />
 
-        <motion.div
-          layout
-          className="relative flex h-full flex-col transform-gpu"
-          style={{ willChange: "transform" }}
-        >
-          {/* Gallery — expands on active */}
-          <AnimatePresence initial={false}>
-            {isActive && (
-              <motion.div
-                key="gallery-shell"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: DURATION.reveal, ease: EASE.luxury }}
-                className="overflow-hidden"
-              >
-                <motion.div className="p-4 pb-0" layout>
-                  <ProjectGallery
-                    title={title}
-                    images={images}
-                    isActive={isActive}
-                    parallax={parallax}
-                  />
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        <div className="relative flex h-full flex-col transform-gpu" style={{ willChange: "transform" }}>
+          {/* Gallery — reveal without layout thrash (no height:auto) */}
+          <motion.div
+            className="overflow-hidden"
+            initial={false}
+            animate={{
+              maxHeight: isActive ? 520 : 0,
+              opacity: isActive ? 1 : 0,
+            }}
+            transition={{ duration: DURATION.reveal, ease: EASE.luxury }}
+            style={{ willChange: "max-height, opacity" }}
+          >
+            <div className="p-4 pb-0">{isActive && <ProjectGallery title={title} images={images} isActive={isActive} parallax={parallax} />}</div>
+          </motion.div>
 
-          <motion.div layout className="relative flex flex-grow flex-col p-6">
+          <div className="relative flex flex-grow flex-col p-6">
             {/* Status dot */}
             <div className="absolute right-3 top-3 z-20">
               <motion.div
@@ -165,7 +150,6 @@ export function ProjectCard({
                 "mt-2 text-zinc-400 transition-all duration-500",
                 !isActive && "line-clamp-2"
               )}
-              layout
             >
               {description}
             </motion.p>
@@ -207,9 +191,9 @@ export function ProjectCard({
             <AnimatePresence>
               {isActive && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
                   transition={{ duration: DURATION.medium, ease: EASE.luxury }}
                   className="overflow-hidden"
                 >
@@ -264,7 +248,7 @@ export function ProjectCard({
             {isMobile && !isActive && (
               <p className="mt-auto pt-4 text-xs text-zinc-500">Tap to preview</p>
             )}
-          </motion.div>
+          </div>
 
           {/* Mouse-follow shine */}
           {!isMobile && (
@@ -276,7 +260,7 @@ export function ProjectCard({
               }}
             />
           )}
-        </motion.div>
+        </div>
       </motion.div>
     </motion.article>
   )
