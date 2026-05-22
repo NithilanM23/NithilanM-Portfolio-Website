@@ -3,45 +3,58 @@
 import { useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 
+import { useMobile } from "@/hooks/use-mobile"
+import { useReducedMotion } from "@/hooks/use-reduced-motion"
+import { DURATION, EASE } from "@/lib/animation"
+
 export function CreativeHero() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const isMobile = useMobile()
+  const reduced = useReducedMotion()
 
   useEffect(() => {
+    if (reduced) return
+
     const canvas = canvasRef.current
     if (!canvas) return
 
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    let devicePixelRatio: number
+    let devicePixelRatio = 1
+    let animationId = 0
+    let running = true
 
-    // Set canvas dimensions
     const setCanvasDimensions = () => {
       devicePixelRatio = window.devicePixelRatio || 1
       const rect = canvas.getBoundingClientRect()
-
       canvas.width = rect.width * devicePixelRatio
       canvas.height = rect.height * devicePixelRatio
-
-      ctx.scale(devicePixelRatio, devicePixelRatio)
+      ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0)
     }
 
     setCanvasDimensions()
     window.addEventListener("resize", setCanvasDimensions)
 
-    // Mouse position
     let mouseX = 0
     let mouseY = 0
     let targetX = 0
     let targetY = 0
 
-    window.addEventListener("mousemove", (e) => {
+    const onMouseMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect()
       targetX = e.clientX - rect.left
       targetY = e.clientY - rect.top
-    })
+    }
 
-    // Particle class
+    window.addEventListener("mousemove", onMouseMove)
+
+    const onVisibility = () => {
+      running = document.visibilityState === "visible"
+      if (running) animate()
+    }
+    document.addEventListener("visibilitychange", onVisibility)
+
     class Particle {
       x: number
       y: number
@@ -60,39 +73,24 @@ export function CreativeHero() {
         this.size = Math.random() * 5 + 2
         this.density = Math.random() * 30 + 1
         this.distance = 0
-
-        // Create a gradient from orange to warm amber
-        const hue = Math.random() * 30 + 18 // 18-48 range for oranges and ambers
+        const hue = Math.random() * 30 + 18
         this.color = `hsl(${hue}, 85%, 55%)`
       }
 
       update() {
-        // Calculate distance between mouse and particle
         const dx = mouseX - this.x
         const dy = mouseY - this.y
-        this.distance = Math.sqrt(dx * dx + dy * dy)
-
-        const forceDirectionX = dx / this.distance
-        const forceDirectionY = dy / this.distance
+        this.distance = Math.sqrt(dx * dx + dy * dy) || 1
 
         const maxDistance = 100
         const force = (maxDistance - this.distance) / maxDistance
 
         if (this.distance < maxDistance) {
-          const directionX = forceDirectionX * force * this.density
-          const directionY = forceDirectionY * force * this.density
-
-          this.x -= directionX
-          this.y -= directionY
+          this.x -= (dx / this.distance) * force * this.density
+          this.y -= (dy / this.distance) * force * this.density
         } else {
-          if (this.x !== this.baseX) {
-            const dx = this.x - this.baseX
-            this.x -= dx / 10
-          }
-          if (this.y !== this.baseY) {
-            const dy = this.y - this.baseY
-            this.y -= dy / 10
-          }
+          this.x -= (this.x - this.baseX) / 10
+          this.y -= (this.y - this.baseY) / 10
         }
       }
 
@@ -100,56 +98,50 @@ export function CreativeHero() {
         ctx.fillStyle = this.color
         ctx.beginPath()
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2)
-        ctx.closePath()
         ctx.fill()
       }
     }
 
-    // Create particle grid
     const particlesArray: Particle[] = []
-    const particleCount = 1000
-    const gridSize = 30
+    const gridSize = isMobile ? 48 : 30
 
     function init() {
       particlesArray.length = 0
-
       const canvasWidth = canvas.width / devicePixelRatio
       const canvasHeight = canvas.height / devicePixelRatio
-
       const numX = Math.floor(canvasWidth / gridSize)
       const numY = Math.floor(canvasHeight / gridSize)
 
       for (let y = 0; y < numY; y++) {
         for (let x = 0; x < numX; x++) {
-          const posX = x * gridSize + gridSize / 2
-          const posY = y * gridSize + gridSize / 2
-          particlesArray.push(new Particle(posX, posY))
+          particlesArray.push(new Particle(x * gridSize + gridSize / 2, y * gridSize + gridSize / 2))
         }
       }
     }
 
     init()
+    window.addEventListener("resize", init)
 
-    // Animation loop
+    const connectionDist = isMobile ? 28 : 30
+
     const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      if (!running) return
+      const { width: w, height: h } = canvas.getBoundingClientRect()
+      ctx.clearRect(0, 0, w, h)
 
-      // Smooth mouse following
       mouseX += (targetX - mouseX) * 0.1
       mouseY += (targetY - mouseY) * 0.1
 
-      // Draw connections
       for (let i = 0; i < particlesArray.length; i++) {
         particlesArray[i].update()
         particlesArray[i].draw()
 
-        // Draw connections
-        for (let j = i; j < particlesArray.length; j++) {
+        for (let j = i + 1; j < particlesArray.length; j++) {
           const dx = particlesArray[i].x - particlesArray[j].x
           const dy = particlesArray[i].y - particlesArray[j].y
           const distance = Math.sqrt(dx * dx + dy * dy)
 
-          if (distance < 30) {
+          if (distance < connectionDist) {
             ctx.beginPath()
             ctx.strokeStyle = `rgba(255, 140, 40, ${0.2 - distance / 150})`
             ctx.lineWidth = 0.5
@@ -160,26 +152,33 @@ export function CreativeHero() {
         }
       }
 
-      requestAnimationFrame(animate)
+      animationId = requestAnimationFrame(animate)
     }
 
     animate()
 
-    // Handle window resize
-    window.addEventListener("resize", init)
-
     return () => {
+      running = false
+      cancelAnimationFrame(animationId)
       window.removeEventListener("resize", setCanvasDimensions)
       window.removeEventListener("resize", init)
+      window.removeEventListener("mousemove", onMouseMove)
+      document.removeEventListener("visibilitychange", onVisibility)
     }
-  }, [])
+  }, [isMobile, reduced])
+
+  if (reduced) {
+    return (
+      <div className="w-full h-[400px] md:h-[500px] relative rounded-2xl bg-gradient-to-br from-orange-500/20 via-zinc-900/40 to-amber-500/15 border border-zinc-700/40" />
+    )
+  }
 
   return (
     <motion.div
       className="w-full h-[400px] md:h-[500px] relative"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 1 }}
+      transition={{ duration: DURATION.slow, ease: EASE.luxury }}
     >
       <canvas ref={canvasRef} className="w-full h-full" style={{ display: "block" }} />
     </motion.div>

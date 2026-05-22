@@ -8,14 +8,16 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ProjectGallery } from "@/components/project-gallery"
-import { useProximity } from "@/hooks/use-proximity"
 import { usePointerParallax } from "@/hooks/use-pointer-parallax"
 import { useMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
-import { DURATION, EASE, spring, stagger } from "@/lib/animation"
+import { DURATION, EASE, spring, stagger, PROJECT_HOVER_DELAY_MS } from "@/lib/animation"
+import { VIEWPORT } from "@/lib/viewport"
 import type { Project } from "@/types/project"
 
 export type ProjectCardProps = Project
+
+const HOVER_LEAVE_GRACE_MS = 280
 
 const contentVariants = {
   hidden: { opacity: 0, y: 14 },
@@ -47,25 +49,79 @@ export function ProjectCard({
 }: ProjectCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
   const isMobile = useMobile()
-  const [isHovered, setIsHovered] = useState(false)
+  const [clickedOpen, setClickedOpen] = useState(false)
+  const [hoverOpen, setHoverOpen] = useState(false)
   const [isTapped, setIsTapped] = useState(false)
+  const [hoverPending, setHoverPending] = useState(false)
 
-  const proximityEnabled = !isMobile
-  const isNear = useProximity(cardRef, 100, proximityEnabled)
-  const parallaxEnabled = !isMobile && (isHovered || isNear || isTapped)
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const clearHoverTimer = useCallback(() => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current)
+      hoverTimerRef.current = null
+    }
+  }, [])
+
+  const clearLeaveTimer = useCallback(() => {
+    if (leaveTimerRef.current) {
+      clearTimeout(leaveTimerRef.current)
+      leaveTimerRef.current = null
+    }
+  }, [])
+
+  const isActive = isMobile ? isTapped : clickedOpen || hoverOpen
+  const parallaxEnabled = !isMobile && isActive
   const parallax = usePointerParallax(cardRef, parallaxEnabled, 1)
 
-  const isActive = isMobile ? isTapped : isHovered || isNear
+  const galleryTransition = isActive ? spring.galleryOpen : spring.galleryClose
 
-  const handleTap = useCallback(() => {
-    if (!isMobile) return
-    setIsTapped((prev) => !prev)
-  }, [isMobile])
+  const handleMouseEnter = useCallback(() => {
+    if (isMobile || clickedOpen) return
+    clearLeaveTimer()
+    setHoverPending(true)
+    clearHoverTimer()
+    hoverTimerRef.current = setTimeout(() => {
+      setHoverOpen(true)
+      setHoverPending(false)
+    }, PROJECT_HOVER_DELAY_MS)
+  }, [isMobile, clickedOpen, clearHoverTimer, clearLeaveTimer])
 
-  // Collapse other interactions when switching to desktop
+  const handleMouseLeave = useCallback(() => {
+    if (isMobile) return
+    clearHoverTimer()
+    setHoverPending(false)
+    if (clickedOpen) return
+
+    clearLeaveTimer()
+    leaveTimerRef.current = setTimeout(() => {
+      setHoverOpen(false)
+    }, HOVER_LEAVE_GRACE_MS)
+  }, [isMobile, clickedOpen, clearHoverTimer, clearLeaveTimer])
+
+  const handleClick = useCallback(() => {
+    if (isMobile) {
+      setIsTapped((prev) => !prev)
+      return
+    }
+    clearHoverTimer()
+    clearLeaveTimer()
+    setHoverPending(false)
+    setHoverOpen(false)
+    setClickedOpen((prev) => !prev)
+  }, [isMobile, clearHoverTimer, clearLeaveTimer])
+
   useEffect(() => {
     if (!isMobile) setIsTapped(false)
   }, [isMobile])
+
+  useEffect(() => {
+    return () => {
+      clearHoverTimer()
+      clearLeaveTimer()
+    }
+  }, [clearHoverTimer, clearLeaveTimer])
 
   return (
     <motion.article
@@ -73,45 +129,41 @@ export function ProjectCard({
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: DURATION.slow, ease: EASE.luxury }}
-      viewport={{ once: true, margin: "-40px" }}
-      className={cn(
-        "group relative h-full will-change-transform",
-        isActive && "z-30"
-      )}
-      onMouseEnter={() => !isMobile && setIsHovered(true)}
-      onMouseLeave={() => !isMobile && setIsHovered(false)}
-      onClick={handleTap}
+      viewport={{ ...VIEWPORT, margin: "-40px" }}
+      className={cn("group relative h-full will-change-transform", isActive && "z-30")}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onClick={handleClick}
       onKeyDown={(e) => {
-        if (isMobile && (e.key === "Enter" || e.key === " ")) {
+        if (e.key === "Enter" || e.key === " ") {
           e.preventDefault()
-          handleTap()
+          handleClick()
         }
       }}
-      role={isMobile ? "button" : undefined}
-      tabIndex={isMobile ? 0 : undefined}
-      aria-expanded={isMobile ? isActive : undefined}
+      role="button"
+      tabIndex={0}
+      aria-expanded={isActive}
     >
       <motion.div
+        layout
         className={cn(
-          "relative h-full overflow-hidden rounded-xl border backdrop-blur-sm transition-[border-color,box-shadow] duration-500",
+          "relative h-full overflow-hidden rounded-xl border backdrop-blur-sm",
           "bg-zinc-800/50 border-zinc-700/50",
           isActive && "border-orange-500/50 shadow-[0_0_40px_-8px_rgba(249,115,22,0.35)]"
         )}
         animate={{
-          scale: isActive ? (isMobile ? 1 : 1.03) : 1,
+          scale: isActive ? (isMobile ? 1 : 1.02) : 1,
         }}
-        transition={spring.soft}
+        transition={isActive ? spring.galleryOpen : spring.galleryClose}
         style={{ transformOrigin: "center center" }}
       >
-        {/* Gradient glow — consistent with GlassmorphicCard */}
         <motion.div
           className="pointer-events-none absolute -inset-1 rounded-xl bg-gradient-to-r from-orange-500/10 to-amber-500/10 blur-md"
           animate={{ opacity: isActive ? 1 : 0.25 }}
-          transition={{ duration: isActive ? 0.35 : 1 }}
+          transition={galleryTransition}
         />
 
-        <div className="relative flex h-full flex-col transform-gpu" style={{ willChange: "transform" }}>
-          {/* Gallery — reveal without layout thrash (no height:auto) */}
+        <div className="relative flex h-full flex-col transform-gpu">
           <motion.div
             className="overflow-hidden"
             initial={false}
@@ -119,47 +171,56 @@ export function ProjectCard({
               maxHeight: isActive ? 520 : 0,
               opacity: isActive ? 1 : 0,
             }}
-            transition={{ duration: DURATION.reveal, ease: EASE.luxury }}
-            style={{ willChange: "max-height, opacity" }}
+            transition={galleryTransition}
           >
-            <div className="p-4 pb-0">{isActive && <ProjectGallery title={title} images={images} isActive={isActive} parallax={parallax} />}</div>
+            <AnimatePresence mode="wait">
+              {isActive && (
+                <motion.div
+                  key="gallery"
+                  initial={{ opacity: 0, y: -12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={galleryTransition}
+                  className="p-4 pb-0"
+                >
+                  <ProjectGallery
+                    title={title}
+                    images={images}
+                    isActive={isActive}
+                    parallax={parallax}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
 
           <div className="relative flex flex-grow flex-col p-6">
-            {/* Status dot */}
             <div className="absolute right-3 top-3 z-20">
               <motion.div
                 className="h-3 w-3 rounded-full"
                 animate={{
-                  backgroundColor: isActive ? "#22c55e" : "#71717a",
-                  scale: isActive ? 1.15 : 1,
+                  backgroundColor: isActive ? "#22c55e" : hoverPending ? "#f97316" : "#71717a",
+                  scale: isActive ? 1.15 : hoverPending ? 1.08 : 1,
                 }}
-                transition={{ duration: DURATION.fast }}
+                transition={spring.snappy}
               />
             </div>
 
-            <motion.h3
-              className="pr-6 text-xl font-bold"
-              animate={{ color: isActive ? "#fafafa" : "#fafafa" }}
-            >
-              {title}
-            </motion.h3>
+            <h3 className="pr-6 text-xl font-bold">{title}</h3>
 
             <motion.p
-              className={cn(
-                "mt-2 text-zinc-400 transition-all duration-500",
-                !isActive && "line-clamp-2"
-              )}
+              className="mt-2 text-zinc-400"
+              animate={{ opacity: isActive ? 1 : 0.85 }}
+              transition={{ duration: DURATION.fast, ease: EASE.luxury }}
             >
-              {description}
+              <span className={cn(!isActive && "line-clamp-2 block")}>{description}</span>
             </motion.p>
 
-            {/* Tags — preview when collapsed, full when active */}
             <motion.div
               className="mt-4 flex flex-wrap gap-2"
               variants={containerVariants}
               initial={false}
-              animate={isActive ? "visible" : undefined}
+              animate={isActive ? "visible" : "hidden"}
             >
               {(isActive ? tags : tags.slice(0, 3)).map((tag, index) => (
                 <motion.div
@@ -167,7 +228,6 @@ export function ProjectCard({
                   custom={index}
                   variants={contentVariants}
                   initial={false}
-                  animate={isActive ? "visible" : undefined}
                 >
                   <Badge
                     variant="secondary"
@@ -187,14 +247,13 @@ export function ProjectCard({
               )}
             </motion.div>
 
-            {/* CTAs — reveal on active */}
             <AnimatePresence>
               {isActive && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 8 }}
-                  transition={{ duration: DURATION.medium, ease: EASE.luxury }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={galleryTransition}
                   className="overflow-hidden"
                 >
                   <motion.div
@@ -202,6 +261,7 @@ export function ProjectCard({
                     variants={containerVariants}
                     initial="hidden"
                     animate="visible"
+                    exit="hidden"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <motion.div custom={0} variants={contentVariants}>
@@ -234,27 +294,26 @@ export function ProjectCard({
               )}
             </AnimatePresence>
 
-            {/* Collapsed hint — desktop only */}
             {!isActive && !isMobile && (
-              <motion.p
-                className="mt-auto pt-4 text-xs text-zinc-500"
-                initial={{ opacity: 0.6 }}
-                animate={{ opacity: isNear ? 1 : 0.6 }}
-              >
-                Hover or move closer to explore
-              </motion.p>
+              <p className="mt-auto pt-4 text-xs text-zinc-500">
+                {hoverPending ? "Keep hovering to preview…" : "Click or hover ~1s to preview"}
+              </p>
             )}
 
             {isMobile && !isActive && (
               <p className="mt-auto pt-4 text-xs text-zinc-500">Tap to preview</p>
             )}
+
+            {isActive && !isMobile && clickedOpen && (
+              <p className="mt-auto pt-4 text-xs text-zinc-500">Click again to close</p>
+            )}
           </div>
 
-          {/* Mouse-follow shine */}
           {!isMobile && (
             <motion.div
               className="pointer-events-none absolute inset-0 opacity-0 mix-blend-soft-light"
               animate={{ opacity: isActive ? 0.15 : 0 }}
+              transition={galleryTransition}
               style={{
                 background: `radial-gradient(600px circle at ${50 + parallax.x * 25}% ${50 + parallax.y * 25}%, rgba(255,255,255,0.12), transparent 40%)`,
               }}

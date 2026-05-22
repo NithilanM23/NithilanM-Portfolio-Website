@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import { Award, GraduationCap, Trophy, type LucideIcon } from "lucide-react"
 
 import { useCounter } from "@/hooks/use-counter"
+import { VIEWPORT } from "@/lib/viewport"
 
 type Stat = {
   icon: LucideIcon
@@ -58,8 +59,8 @@ export function AboutStats() {
               key={stat.label}
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: idx * 0.06 }}
-              viewport={{ once: true }}
+              transition={{ duration: 0.45, delay: idx * 0.06, ease: [0.22, 1, 0.36, 1] }}
+              viewport={VIEWPORT}
               className="relative overflow-hidden rounded-xl bg-zinc-900/30 border border-zinc-700/40 p-5"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-amber-500/10 opacity-80" />

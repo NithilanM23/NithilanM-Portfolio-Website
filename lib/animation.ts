@@ -15,7 +15,13 @@ export const DURATION = {
 export const spring = {
   soft: { type: "spring" as const, stiffness: 260, damping: 28, mass: 0.8 },
   snappy: { type: "spring" as const, stiffness: 400, damping: 32, mass: 0.6 },
+  /** Project card gallery expand / collapse */
+  galleryOpen: { type: "spring" as const, stiffness: 180, damping: 24, mass: 0.85 },
+  galleryClose: { type: "spring" as const, stiffness: 200, damping: 28, mass: 0.95 },
 }
+
+/** Hover dwell before project preview opens (ms) */
+export const PROJECT_HOVER_DELAY_MS = 1200
 
 export const stagger = {
   container: { staggerChildren: 0.06, delayChildren: 0.08 },

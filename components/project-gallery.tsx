@@ -17,12 +17,12 @@ interface ProjectGalleryProps {
 }
 
 const imageReveal = {
-  hidden: { opacity: 0, scale: 1.08, y: 12 },
+  hidden: { opacity: 0, scale: 1.06, y: 10 },
   visible: {
     opacity: 1,
     scale: 1,
     y: 0,
-    transition: { duration: DURATION.reveal, ease: EASE.luxury },
+    transition: { type: "spring" as const, stiffness: 180, damping: 24, mass: 0.85 },
   },
 }
 
